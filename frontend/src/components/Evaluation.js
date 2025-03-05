@@ -17,6 +17,37 @@ const Evaluation = () => {
       correctAnswer: 1
     },
     {
+      question: "Questão 2. Tema: Regulamentação SUS. Sobre a lei orgânica do SUS No. 8080 é correto afirmar:",
+      options: [
+        "a) Sendo universal, o SUS deve prover todo tipo de serviço médico com a mesma prioridade.",
+        "b) Respeitando o princípio da equidade todos os pedidos devem ser acolhidos com a mesma priorização.",
+        "c) Sendo integral, o SUS deve ofertar todo tipo de consulta e exame. O regulador deverá, pois, autorizar todas as solicitações que recebe, nunca negando solicitações.",
+        "d) Atendendo a uma alta demanda por exames e consultas, as solicitações devem ser priorizadas de acordo com o quadro clínico, devendo o regulador reconhecer a prioridade a partir das informações descritas nos campos adequados de regulação."
+      ],
+      correctAnswer: 3
+    },
+    {
+      question: "Questão 3. Tema: Ato de regulação. Marque a alternativa correta.",
+      options: [
+        "a) É considerada boa prática iniciar o plantão de regulação médica checando as solicitações devolvidas ao médico regulador.",
+        "b) Durante a filtragem da Fila de Regulação, recomenda-se iniciar a pesquisa pelas solicitações mais recentes.",
+        "c) Ao notar que uma solicitação de consulta ou de exame foi inserida no sistema de regulação por um profissional não médico, esse pedido deverá ser negado, pois apenas médicos podem solicitar exames ou consultas.",
+        "d) Como regulador, não me cabe julgamento clínico, pois o ato de regulação é puramente algorítmico."
+      ],
+      correctAnswer: 0
+    },
+    {
+      question: "Questão 4. Tema: Autorização de Solicitações. Marque a alternativa correta.",
+      options: [
+        "a) Se as informações de um pedido de consulta ou exame forem insuficientes, o médico regulador deve negar imediatamente a solicitação.",
+        "b) É considerado uma boa prática devolver a solicitação ao estabelecimento solicitante para que as informações clínicas sejam complementadas, caso estejam insuficientes.",
+        "c) Em nenhuma circunstância o médico regulador pode solicitar mais informações ao estabelecimento solicitante.",
+        "d) Ao receber uma solicitação com informações insuficientes, o médico regulador deve priorizá-la automaticamente como baixa prioridade."
+      ],
+      correctAnswer: 1
+    },
+
+    {
       question: "Questão 5. Tema: Negação de Solicitações. Marque a alternativa correta.",
       options: [
         "a) O médico regulador nunca deve negar uma solicitação, pois todos os pedidos devem ser atendidos.",

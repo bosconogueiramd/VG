@@ -1,71 +1,59 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import Header from './Header';
-import Footer from './Footer';
-import '../styles/certificate.css';
+const express = require('express');
+const axios = require('axios');
+require('dotenv').config();
 
-const Certificate = () => {
-  const [name, setName] = useState('');
-  const [certificateUrl, setCertificateUrl] = useState('');
-  const [loading, setLoading] = useState(false);
+const router = express.Router();
 
-  const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
-
-  const handleGenerateCertificate = async () => {
-    if (!name.trim()) {
-      alert('Por favor, insira seu nome antes de gerar o certificado.');
-      return;
-    }
-
-    setLoading(true);
-
+// 🔹 Rota para gerar certificado
+router.post('/generate', async (req, res) => {
     try {
-      const response = await axios.post(`${API_URL}/certificate/generate`, { name });
-      setCertificateUrl(response.data.pdf_url);
+        const { name } = req.body;
+
+        if (!name) {
+            return res.status(400).json({ message: "Nome é obrigatório para gerar o certificado." });
+        }
+
+        // 🔑 Configurações do DocSpring
+        const API_KEY = process.env.DOCSPRING_API_KEY;
+        const TEMPLATE_ID = process.env.DOCSPRING_TEMPLATE_ID;
+        const DOCSPRING_URL = `https://api.docspring.com/api/v1/templates/${TEMPLATE_ID}/submissions`;
+
+        // 📄 Enviar os dados para geração do certificado
+        const response = await axios.post(
+            DOCSPRING_URL,
+            {
+                data: { nome_completo: name }, // ⚠️ Certifique-se de que o campo do template do DocSpring corresponde
+                test: false // Defina como `false` se estiver usando produção
+            },
+            {
+                auth: { username: API_KEY, password: '' },
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
+
+        const submissionId = response.data.id;
+
+        console.log("🔄 Aguardando processamento do certificado...");
+
+        // 🔄 Aguardar o processamento do DocSpring
+        setTimeout(async () => {
+            try {
+                const submissionResponse = await axios.get(`${DOCSPRING_URL}/${submissionId}`, {
+                    auth: { username: API_KEY, password: '' }
+                });
+
+                console.log("✅ Certificado gerado:", submissionResponse.data.download_url);
+                res.json({ pdf_url: submissionResponse.data.download_url });
+            } catch (error) {
+                console.error("❌ Erro ao obter certificado:", error);
+                res.status(500).json({ message: "Erro ao gerar certificado." });
+            }
+        }, 10000); // ⚠️ Aguarde 10 segundos antes de buscar o PDF
+
     } catch (error) {
-      console.error("Erro ao gerar certificado:", error);
-      alert('Erro ao gerar certificado. Tente novamente.');
-    } finally {
-      setLoading(false);
+        console.error("❌ Erro ao processar certificado:", error);
+        res.status(500).json({ message: "Erro ao processar solicitação." });
     }
-  };
+});
 
-  return (
-    <div>
-      <Header />
-      <main className="container my-4">
-        {!certificateUrl ? (
-          <div className="form-container">
-            <h2>Gerar Certificado</h2>
-            <p>Por favor, insira seu nome para que ele apareça no certificado:</p>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Digite seu nome completo"
-              className="form-control my-3"
-            />
-            <button onClick={handleGenerateCertificate} className="btn btn-primary" disabled={loading}>
-              {loading ? "Gerando..." : "Gerar Certificado"}
-            </button>
-          </div>
-        ) : (
-          <div className="certificate">
-            <h2>Certificado Gerado com Sucesso!</h2>
-            <p>
-              Certificamos que <strong>{name}</strong> concluiu a Visita Guiada em Regulação Médica com sucesso.
-            </p>
-            <p>
-              <a href={certificateUrl} target="_blank" rel="noopener noreferrer" className="btn btn-success">
-                Baixar Certificado
-              </a>
-            </p>
-          </div>
-        )}
-      </main>
-      <Footer />
-    </div>
-  );
-};
-
-export default Certificate;
+module.exports = router;

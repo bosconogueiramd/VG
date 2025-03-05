@@ -1,55 +1,63 @@
-const express = require('express');
-const axios = require('axios');
-require('dotenv').config();
-
+const express = require("express");
+const axios = require("axios");
 const router = express.Router();
+require("dotenv").config();
 
-// 🔹 Rota para gerar certificado
-router.post('/generate', async (req, res) => {
+// 🔹 Definição das variáveis de ambiente
+const DOCSPRING_API_KEY = process.env.DOCSPRING_API_KEY;
+const DOCSPRING_TEMPLATE_ID = process.env.DOCSPRING_TEMPLATE_ID;
+
+// 🔹 Verifica se as variáveis de ambiente estão corretamente carregadas
+if (!DOCSPRING_API_KEY || !DOCSPRING_TEMPLATE_ID) {
+    console.error("❌ ERRO: Variáveis de ambiente não definidas! Verifique seu .env");
+    process.exit(1);
+}
+
+router.post("/generate", async (req, res) => {
     try {
-        const { name } = req.body;
+        const { name, date } = req.body;
 
-        if (!name) {
-            return res.status(400).json({ message: "Nome é obrigatório para gerar o certificado." });
-        }
+        // 🔹 Garante que os valores obrigatórios sejam fornecidos
+        const nomeCompleto = name || "Nome Padrão";
+        const dataEmissao = date || new Date().toISOString().split("T")[0]; // Formato YYYY-MM-DD
 
-        // 🔑 Configurações da API DocSpring
-        const API_KEY = process.env.DOCSPRING_API_KEY;
-        const TEMPLATE_ID = process.env.DOCSPRING_TEMPLATE_ID;
-        const DOCSPRING_URL = `https://api.docspring.com/api/v1/templates/${TEMPLATE_ID}/submissions`;
-
-        // 📄 Dados do certificado a serem preenchidos no modelo do DocSpring
-        const payload = {
-            data: { name },
-            test: true // Define como "true" se estiver em ambiente de testes
+        const requestData = {
+            data: {
+                name: nomeCompleto,
+                person: { name: nomeCompleto }, // 🔹 Objeto obrigatório no schema
+                names: [nomeCompleto], // 🔹 Array obrigatório no schema
+                date: dataEmissao, // 🔹 Data no formato correto
+                image: { url: "https://seusite.com/logo.png" }, // 🔹 URL da imagem conforme esperado
+                nome_completo: nomeCompleto,
+                data_emissao: dataEmissao
+            },
+            test: false
         };
 
-        // 🔍 Enviar a requisição para o DocSpring
-        const response = await axios.post(DOCSPRING_URL, payload, {
-            auth: { username: API_KEY, password: '' },
-            headers: { 'Content-Type': 'application/json' }
+        console.log("📤 Enviando dados para DocSpring:", JSON.stringify(requestData, null, 2));
+
+        const response = await axios.post(
+            `https://api.docspring.com/api/v1/templates/${DOCSPRING_TEMPLATE_ID}/submissions`,
+            requestData,
+            {
+                auth: { username: DOCSPRING_API_KEY, password: "" },
+                headers: { "Content-Type": "application/json" }
+            }
+        );
+
+        return res.json({
+            success: true,
+            message: "✅ Certificado gerado com sucesso!",
+            submission_id: response.data.id
         });
 
-        const submissionId = response.data.id;
-
-        // 🔄 Espera um tempo para o DocSpring processar o PDF
-        setTimeout(async () => {
-            try {
-                const submissionResponse = await axios.get(`${DOCSPRING_URL}/${submissionId}`, {
-                    auth: { username: API_KEY, password: '' }
-                });
-
-                // Retorna o link do PDF gerado
-                res.json({ pdf_url: submissionResponse.data.download_url });
-            } catch (error) {
-                console.error("Erro ao obter certificado:", error);
-                res.status(500).json({ message: "Erro ao gerar certificado." });
-            }
-        }, 5000); // Espera 5 segundos antes de buscar o PDF
-
     } catch (error) {
-        console.error("Erro ao gerar certificado:", error);
-        res.status(500).json({ message: "Erro ao processar solicitação." });
+        console.error("❌ Erro ao gerar certificado:", error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Erro ao processar solicitação",
+            error: error.response?.data || error.message
+        });
     }
 });
 
