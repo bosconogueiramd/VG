@@ -1,62 +1,65 @@
 const express = require("express");
-const axios = require("axios");
 const router = express.Router();
-require("dotenv").config();
-
-// 🔹 Definição das variáveis de ambiente
-const DOCSPRING_API_KEY = process.env.DOCSPRING_API_KEY;
-const DOCSPRING_TEMPLATE_ID = process.env.DOCSPRING_TEMPLATE_ID;
-
-// 🔹 Verifica se as variáveis de ambiente estão corretamente carregadas
-if (!DOCSPRING_API_KEY || !DOCSPRING_TEMPLATE_ID) {
-    console.error("❌ ERRO: Variáveis de ambiente não definidas! Verifique seu .env");
-    process.exit(1);
-}
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
+const path = require("path");
 
 router.post("/generate", async (req, res) => {
     try {
-        const { name, date } = req.body;
+        const { name } = req.body;
 
-        // 🔹 Garante que os valores obrigatórios sejam fornecidos
-        const nomeCompleto = name || "Nome Padrão";
-        const dataEmissao = date || new Date().toISOString().split("T")[0]; // Formato YYYY-MM-DD
+        if (!name) {
+            return res.status(400).json({ message: "Nome é obrigatório para gerar o certificado." });
+        }
 
-        const requestData = {
-            data: {
-                name: nomeCompleto,
-                person: { name: nomeCompleto }, // 🔹 Objeto obrigatório no schema
-                names: [nomeCompleto], // 🔹 Array obrigatório no schema
-                date: dataEmissao, // 🔹 Data no formato correto
-                image: { url: "https://seusite.com/logo.png" }, // 🔹 URL da imagem conforme esperado
-                nome_completo: nomeCompleto,
-                data_emissao: dataEmissao
-            },
-            test: false
-        };
+        // Criar diretório de certificados se não existir
+        const certificatesPath = path.join(__dirname, "..", "certificates");
+        if (!fs.existsSync(certificatesPath)) {
+            fs.mkdirSync(certificatesPath, { recursive: true });
+        }
 
-        console.log("📤 Enviando dados para DocSpring:", JSON.stringify(requestData, null, 2));
+        // Criar o nome do arquivo do certificado
+        const fileName = `certificado_${name.replace(/\s+/g, "_")}.pdf`;
+        const filePath = path.join(certificatesPath, fileName);
 
-        const response = await axios.post(
-            `https://api.docspring.com/api/v1/templates/${DOCSPRING_TEMPLATE_ID}/submissions`,
-            requestData,
-            {
-                auth: { username: DOCSPRING_API_KEY, password: "" },
-                headers: { "Content-Type": "application/json" }
-            }
-        );
+        // Criar o PDF
+        const doc = new PDFDocument({ size: "A4", margin: 50 });
+        const stream = fs.createWriteStream(filePath);
+        doc.pipe(stream);
 
-        return res.json({
-            success: true,
-            message: "✅ Certificado gerado com sucesso!",
-            submission_id: response.data.id
+        // Adicionando título
+        doc.fontSize(26).text("Certificado de Conclusão", { align: "center" });
+        doc.moveDown();
+        
+        // Mensagem de certificação
+        doc.fontSize(18).text(`Certificamos que`, { align: "center" });
+        doc.fontSize(22).text(name, { align: "center", bold: true });
+        doc.moveDown();
+        doc.fontSize(18).text("Concluiu com êxito a visita guiada.", { align: "center" });
+        doc.moveDown();
+
+        // Data
+        const dataAtual = new Date().toLocaleDateString("pt-BR");
+        doc.fontSize(14).text(`Data: ${dataAtual}`, { align: "center" });
+
+        // Finaliza o documento
+        doc.end();
+
+        // Retorna a URL do certificado gerado
+        stream.on("finish", () => {
+            return res.json({
+                success: true,
+                message: "✅ Certificado gerado com sucesso!",
+                pdf_url: `http://localhost:5001/certificates/${fileName}` // Ajustado para acessar via frontend
+            });
         });
 
     } catch (error) {
-        console.error("❌ Erro ao gerar certificado:", error.response?.data || error.message);
+        console.error("❌ Erro ao gerar certificado:", error.message);
         return res.status(500).json({
             success: false,
             message: "Erro ao processar solicitação",
-            error: error.response?.data || error.message
+            error: error.message
         });
     }
 });

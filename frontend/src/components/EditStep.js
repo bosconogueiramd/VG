@@ -5,19 +5,14 @@ import { getStepById, updateStepContent } from '../api';
 const EditStep = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [step, setStep] = useState({
-    stepNumber: '',
-    title: '',
-    content: '',
-    imageUrl: ''
-  });
+  const [step, setStep] = useState({ stepNumber: '', title: '', content: '' });
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchStep = async () => {
       try {
         const stepData = await getStepById(id);
-        setStep(stepData);
+        setStep(stepData.data);
       } catch (err) {
         setError('Erro ao carregar os dados do passo.');
       }
@@ -27,10 +22,7 @@ const EditStep = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setStep({
-      ...step,
-      [name]: value
-    });
+    setStep({ ...step, [name]: value });
   };
 
   const handleSubmit = async (e) => {
@@ -86,17 +78,6 @@ const EditStep = () => {
             className="form-control"
             rows="5"
             required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="imageUrl">URL da Imagem</label>
-          <input
-            type="text"
-            id="imageUrl"
-            name="imageUrl"
-            value={step.imageUrl}
-            onChange={handleChange}
-            className="form-control"
           />
         </div>
         <button type="submit" className="btn btn-primary">Salvar</button>

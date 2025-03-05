@@ -1,11 +1,12 @@
-const express = require('express');
-const axios = require('axios');
-require('dotenv').config();
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const PDFDocument = require("pdfkit");
 
 const router = express.Router();
 
-// 🔹 Rota para gerar certificado
-router.post('/generate', async (req, res) => {
+// 🔹 Rota para gerar o certificado
+router.post("/generate", async (req, res) => {
     try {
         const { name } = req.body;
 
@@ -13,47 +14,47 @@ router.post('/generate', async (req, res) => {
             return res.status(400).json({ message: "Nome é obrigatório para gerar o certificado." });
         }
 
-        // 🔑 Configurações do DocSpring
-        const API_KEY = process.env.DOCSPRING_API_KEY;
-        const TEMPLATE_ID = process.env.DOCSPRING_TEMPLATE_ID;
-        const DOCSPRING_URL = `https://api.docspring.com/api/v1/templates/${TEMPLATE_ID}/submissions`;
+        // 🔹 Criar um nome de arquivo único para o certificado
+        const fileName = `certificado_${Date.now()}.pdf`;
+        const filePath = path.join(__dirname, "../certificates", fileName);
 
-        // 📄 Enviar os dados para geração do certificado
-        const response = await axios.post(
-            DOCSPRING_URL,
-            {
-                data: { nome_completo: name }, // ⚠️ Certifique-se de que o campo do template do DocSpring corresponde
-                test: false // Defina como `false` se estiver usando produção
-            },
-            {
-                auth: { username: API_KEY, password: '' },
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
+        // 🔹 Criar a pasta 'certificates' se não existir
+        const certificatesPath = path.join(__dirname, "../certificates");
+        if (!fs.existsSync(certificatesPath)) {
+            fs.mkdirSync(certificatesPath, { recursive: true });
+        }
 
-        const submissionId = response.data.id;
+        // 🔹 Criar e escrever o PDF
+        const doc = new PDFDocument();
+        const stream = fs.createWriteStream(filePath);
+        doc.pipe(stream);
 
-        console.log("🔄 Aguardando processamento do certificado...");
+        // 🎓 Criando o layout do certificado
+        doc.image(path.join(__dirname, "../assets/certificate_bg.png"), 0, 0, { width: 600 }); // Fundo (opcional)
+        doc.fontSize(26).text("Certificado de Conclusão", { align: "center" });
+        doc.moveDown();
+        doc.fontSize(18).text(`Este certificado é concedido a:`, { align: "center" });
+        doc.moveDown();
+        doc.fontSize(22).text(name, { align: "center", bold: true });
+        doc.moveDown();
+        doc.fontSize(16).text("Por ter concluído a Visita Guiada com sucesso!", { align: "center" });
+        doc.moveDown();
+        doc.fontSize(12).text(`Emitido em: ${new Date().toLocaleDateString()}`, { align: "center" });
 
-        // 🔄 Aguardar o processamento do DocSpring
-        setTimeout(async () => {
-            try {
-                const submissionResponse = await axios.get(`${DOCSPRING_URL}/${submissionId}`, {
-                    auth: { username: API_KEY, password: '' }
-                });
+        doc.end();
 
-                console.log("✅ Certificado gerado:", submissionResponse.data.download_url);
-                res.json({ pdf_url: submissionResponse.data.download_url });
-            } catch (error) {
-                console.error("❌ Erro ao obter certificado:", error);
-                res.status(500).json({ message: "Erro ao gerar certificado." });
-            }
-        }, 10000); // ⚠️ Aguarde 10 segundos antes de buscar o PDF
+        stream.on("finish", () => {
+            const pdfUrl = `http://localhost:5001/certificates/${fileName}`;
+            res.json({ pdf_url: pdfUrl });
+        });
 
     } catch (error) {
-        console.error("❌ Erro ao processar certificado:", error);
+        console.error("❌ Erro ao gerar certificado:", error);
         res.status(500).json({ message: "Erro ao processar solicitação." });
     }
 });
+
+// 🔹 Servir os arquivos gerados
+router.use("/certificates", express.static(path.join(__dirname, "../certificates")));
 
 module.exports = router;

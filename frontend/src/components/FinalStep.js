@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Header from './Header';
 import Footer from './Footer';
@@ -9,11 +9,20 @@ const FinalStep = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const API_URL = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, '') || 'http://localhost:5001';
+  const API_URL = process.env.REACT_APP_BACKEND_URL?.trim() || 'http://localhost:5001/api';
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setName(JSON.parse(storedUser).name);
+    } else {
+      setError('Nome do usuário não encontrado.');
+    }
+  }, []);
 
   const handleGenerateCertificate = async () => {
     if (!name.trim()) {
-      alert('Por favor, insira seu nome antes de gerar o certificado.');
+      alert('Erro: Nome do usuário não encontrado.');
       return;
     }
 
@@ -40,14 +49,6 @@ const FinalStep = () => {
 
         {!downloadUrl ? (
           <div>
-            <p>Digite seu nome para gerar o certificado:</p>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Digite seu nome completo"
-              className="form-control my-3"
-            />
             <button onClick={handleGenerateCertificate} className="btn btn-primary" disabled={loading}>
               {loading ? 'Gerando Certificado...' : 'Gerar Certificado'}
             </button>

@@ -15,15 +15,21 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
     try {
       const response = await axios.post(`${API_URL}/auth/login`, { email, password });
-
+  
       if (response.data.token) {
-        // Verifica se o localStorage está disponível antes de salvar o token
-        if (typeof window !== "undefined" && typeof localStorage !== 'undefined') {
-          localStorage.setItem('authToken', response.data.token);
+        // 🔹 Salva o token no localStorage
+        localStorage.setItem('authToken', response.data.token);
+  
+        // 🔹 Salva o nome do usuário no localStorage
+        if (response.data.user && response.data.user.username) {
+          localStorage.setItem('user', JSON.stringify({ name: response.data.user.username }));
+        } else {
+          console.error("❌ Erro: Nome do usuário não retornado pelo backend.");
         }
+  
         navigate('/step1'); // Redirecionar para o primeiro passo da visita guiada
       }
     } catch (error) {

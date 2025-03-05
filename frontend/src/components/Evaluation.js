@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 
-
 const Evaluation = () => {
-  const [questions, setQuestions] = useState([
+  const [questions] = useState([
     {
       question: "Questão 1. Tema: Boas práticas em regulação. Marque a alternativa correta.",
       options: [
-        "a) Durante o ato de regulação médica, a função do médico regulador é aprovar as solicitações. Não cabe ao médico regulador priorizar a solicitação a partir da descrição de quadro clínico, em respeito a autonomia do médico solicitante.",
+        "a) Durante o ato de regulação médica, a função do médico regulador é aprovar as solicitações. Não cabe ao médico regulador priorizar a solicitação a partir da descrição de quadro clínico, em respeito à autonomia do médico solicitante.",
         "b) Ao detalhar dor, o médico solicitante deverá descrever o padrão e ritmo de dor, fornecendo elementos para que o regulador possa priorizar adequadamente a solicitação de consulta ou de exame.",
         "c) Ao descrever um quadro clínico como câncer, o médico regulador deverá priorizar a solicitação com a máxima prioridade possível, não importando a topografia do câncer e o estágio de tratamento.",
         "d) Sabendo que a rotina das UAPS (Postos de Saúde) é bastante movimentada, é aceitável o aproveitamento de um CID principal para todas as solicitações."
@@ -46,7 +45,6 @@ const Evaluation = () => {
       ],
       correctAnswer: 1
     },
-
     {
       question: "Questão 5. Tema: Negação de Solicitações. Marque a alternativa correta.",
       options: [
@@ -139,16 +137,12 @@ const Evaluation = () => {
                   <div key={optionIndex} className="form-check">
                     <input
                       type="radio"
-                      id={`q${index}-o${optionIndex}`}
                       name={`question-${index}`}
-                      value={optionIndex}
                       className="form-check-input"
                       onChange={() => handleAnswerChange(index, optionIndex)}
                       checked={selectedAnswers[index] === optionIndex}
                     />
-                    <label htmlFor={`q${index}-o${optionIndex}`} className="form-check-label">
-                      {option}
-                    </label>
+                    <label className="form-check-label">{option}</label>
                   </div>
                 ))}
               </div>

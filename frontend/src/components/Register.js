@@ -17,20 +17,28 @@ const Register = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-
+  
     try {
       console.log("📤 Enviando dados:", { username, email, password, userType }); // Debugging
       const response = await axios.post(`${API_URL}/auth/register`, { username, email, password, userType });
-
+  
       if (response.data.message === 'Usuário cadastrado com sucesso!') {
-        navigate('/login'); // Redirecionar após cadastro
+        // 🔹 Fazer login automaticamente após o cadastro
+        const loginResponse = await axios.post(`${API_URL}/auth/login`, { email, password });
+  
+        if (loginResponse.data.token) {
+          localStorage.setItem('authToken', loginResponse.data.token);
+          localStorage.setItem('user', JSON.stringify({ name: username })); // Armazena o nome
+  
+          navigate('/step1'); // Redirecionar após cadastro e login automático
+        }
       }
     } catch (error) {
       console.error("❌ Erro ao cadastrar usuário:", error.response?.data?.message || error.message);
       setError(error.response?.data?.message || 'Erro ao cadastrar usuário. Verifique os dados.');
     }
   };
-
+  
   return (
     <div>
       <Header />

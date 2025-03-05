@@ -1,95 +1,31 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import Header from './Header';
-import Footer from './Footer';
-import { getUsers, deleteUser, getStepsContent } from '../api';
+import { API_URL } from '../api'; // ✅ Importação corrigida
 
 const Admin = () => {
   const [users, setUsers] = useState([]);
-  const [steps, setSteps] = useState([]);
-  const navigate = useNavigate();
-
+  
   useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/users`);
+        setUsers(response.data);
+      } catch (error) {
+        console.error("❌ Erro ao obter usuários:", error.response?.data?.message || error.message);
+      }
+    };
     fetchUsers();
-    fetchSteps();
   }, []);
 
-  const fetchUsers = async () => {
-    const response = await getUsers();
-    setUsers(response);
-  };
-
-  const fetchSteps = async () => {
-    const response = await getStepsContent();
-    setSteps(response);
-  };
-
-  const handleDelete = async (id) => {
-    await deleteUser(id);
-    fetchUsers();
-  };
-
-  const handleEditUser = (id) => {
-    navigate(`/edit-user/${id}`);
-  };
-
-  const handleEditStep = (id) => {
-    navigate(`/edit-step/${id}`);
-  };
-
   return (
-    <div>
-      <Header />
-      <main className="container my-4">
-        <h2>Gestão Administrativa</h2>
-        <h3>Usuários</h3>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>CRM</th>
-              <th>Email</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(user => (
-              <tr key={user._id}>
-                <td>{user.fullName}</td>
-                <td>{user.crm}</td>
-                <td>{user.email}</td>
-                <td>
-                  <button onClick={() => handleEditUser(user._id)} className="btn btn-warning">Editar</button>
-                  <button onClick={() => handleDelete(user._id)} className="btn btn-danger">Excluir</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <h3>Passos</h3>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Número do Passo</th>
-              <th>Título</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {steps.map(step => (
-              <tr key={step._id}>
-                <td>{step.stepNumber}</td>
-                <td>{step.title}</td>
-                <td>
-                  <button onClick={() => handleEditStep(step._id)} className="btn btn-warning">Editar</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </main>
-      <Footer />
+    <div className="container my-4">
+      <h2>Painel Administrativo</h2>
+      <ul>
+        {users.map(user => (
+          <li key={user._id}>{user.username} - {user.email}</li>
+        ))}
+      </ul>
     </div>
   );
 };
